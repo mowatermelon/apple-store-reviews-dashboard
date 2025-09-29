@@ -30,7 +30,7 @@ function parseAppStoreUrl(url: string): { appId: string; country: string } | nul
   };
 }
 
-// 多国家评论收集策略
+// 多国家评论收集策略 - 优化版
 async function fetchAppReviewsEnhanced(appId: string, primaryCountry: string, targetCount: number = 500): Promise<ReviewData[]> {
   const allReviews: ReviewData[] = [];
   
@@ -43,26 +43,50 @@ async function fetchAppReviewsEnhanced(appId: string, primaryCountry: string, ta
   console.log(`开始从多个地区收集评论，目标: ${targetCount} 条`);
 
   for (const country of countries) {
-    if (allReviews.length >= targetCount) break;
-    
     try {
-      const needCount = Math.min(200, targetCount - allReviews.length);
-      console.log(`正在收集 ${country.toUpperCase()} 地区的评论（目标: ${needCount} 条）...`);
-      const countryReviews = await fetchCountryReviews(appId, country, needCount);
+      // 1. 优先国家：若是 primaryCountry，则先检查是否能独立满足需求
+      const isPrimaryCountry = country === primaryCountry;
+      console.log(`正在收集 ${country.toUpperCase()} 地区的评论${isPrimaryCountry ? '（优先国家）' : '（补充国家）'}...`);
       
-      // 添加国家标识
+      // 2. 对于每个国家，始终请求其可获取的最大评论数（最多500条）
+      const countryReviews = await fetchCountryReviews(appId, country, 500);
+      
+      console.log(`${country.toUpperCase()} 地区收集到 ${countryReviews.length} 条评论`);
+      
+      // 添加国家标识并去重处理
       const reviewsWithCountry = countryReviews.map(review => ({
         ...review,
         country: country.toUpperCase()
       }));
       
-      allReviews.push(...reviewsWithCountry);
-      console.log(`${country.toUpperCase()} 地区收集到 ${countryReviews.length} 条评论，总计: ${allReviews.length}`);
+      // 去除重复评论（基于作者和内容）
+      const uniqueReviews = reviewsWithCountry.filter(newReview => 
+        !allReviews.some(existingReview => 
+          existingReview.author === newReview.author && 
+          existingReview.content === newReview.content
+        )
+      );
+      
+      allReviews.push(...uniqueReviews);
+      console.log(`${country.toUpperCase()} 地区新增 ${uniqueReviews.length} 条独特评论，总计: ${allReviews.length}`);
+      
+      // 3. 终止条件：检查累计评论总数是否 ≥ targetCount
+      if (allReviews.length >= targetCount) {
+        console.log(`✅ 已达到目标 ${targetCount} 条评论，停止收集后续国家数据`);
+        break;
+      }
+      
+      // 4. 若是优先国家且已满足需求，则不再请求其他国家
+      if (isPrimaryCountry && allReviews.length >= targetCount) {
+        console.log(`✅ 优先国家 ${primaryCountry.toUpperCase()} 已满足 ${targetCount} 条评论需求`);
+        break;
+      }
       
       // 添加延迟避免请求过快
       if (countries.indexOf(country) < countries.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
+      
     } catch (error) {
       console.warn(`收集 ${country} 地区评论失败:`, error);
       continue;
@@ -73,16 +97,19 @@ async function fetchAppReviewsEnhanced(appId: string, primaryCountry: string, ta
   allReviews.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   
   console.log(`总共收集到 ${allReviews.length} 条评论，来自 ${new Set(allReviews.map(r => r.country)).size} 个地区`);
-  return allReviews.slice(0, targetCount);
+  
+  return allReviews;
 }
 
-// 单个国家评论收集
-async function fetchCountryReviews(appId: string, country: string, targetCount: number): Promise<ReviewData[]> {
+// 单个国家评论收集 - 优化版：获取该国家可获取的最大评论数
+async function fetchCountryReviews(appId: string, country: string, maxCount: number): Promise<ReviewData[]> {
   const reviews: ReviewData[] = [];
   let page = 1;
-  const maxPages = Math.min(10, Math.ceil(targetCount / 25)); // 每页大约25条评论
+  const maxPages = Math.min(10, Math.ceil(maxCount / 25)); // 每页大约 50 条评论，最多查询 10 页
 
-  while (reviews.length < targetCount && page <= maxPages) {
+  console.log(`开始收集 ${country.toUpperCase()} 地区评论，目标获取该地区所有可用评论（最多 ${maxCount} 条）`);
+
+  while (reviews.length < maxCount && page <= maxPages) {
     try {
       const url = `https://itunes.apple.com/${country}/rss/customerreviews/page=${page}/id=${appId}/sortby=mostrecent/json`;
       console.log(`请求 ${country.toUpperCase()} 第 ${page} 页: ${url}`);
@@ -95,7 +122,7 @@ async function fetchCountryReviews(appId: string, country: string, targetCount: 
       
       if (!response.ok) {
         if (response.status === 404) {
-          console.log(`${country.toUpperCase()} 地区第 ${page} 页未找到数据 (404)，停止收集`);
+          console.log(`${country.toUpperCase()} 地区第 ${page} 页未找到数据 (404)，该地区评论已收集完毕`);
           break;
         }
         console.warn(`${country.toUpperCase()} 第 ${page} 页请求失败: ${response.status} - ${url}`);
@@ -114,12 +141,13 @@ async function fetchCountryReviews(appId: string, country: string, targetCount: 
       console.log(`${country.toUpperCase()} 第 ${page} 页获取到 ${reviewEntries.length} 条原始数据`);
       
       if (reviewEntries.length === 0) {
-        console.log(`${country.toUpperCase()} 第 ${page} 页无数据，停止收集`);
+        console.log(`${country.toUpperCase()} 第 ${page} 页无数据，该地区评论收集完毕`);
         break;
       }
       
+      let pageNewReviews = 0;
       for (const entry of reviewEntries) {
-        if (reviews.length >= targetCount) break;
+        if (reviews.length >= maxCount) break;
         
         // 检查是否是重复评论（通过内容和作者判断）
         const isDuplicate = reviews.some(r => 
@@ -137,13 +165,17 @@ async function fetchCountryReviews(appId: string, country: string, targetCount: 
             date: entry.updated?.label || new Date().toISOString(),
             version: entry['im:version']?.label
           });
+          pageNewReviews++;
         }
       }
       
+      console.log(`${country.toUpperCase()} 第 ${page} 页新增 ${pageNewReviews} 条独特评论`);
+      
       page++;
       
-      // 如果这页没有新的评论，可能已经到底了
-      if (reviewEntries.length < 10) {
+      // 如果这页没有新的评论或评论数量很少，可能已经到底了
+      if (pageNewReviews === 0 || reviewEntries.length < 10) {
+        console.log(`${country.toUpperCase()} 地区评论已收集完毕，共 ${reviews.length} 条`);
         break;
       }
       
@@ -153,6 +185,7 @@ async function fetchCountryReviews(appId: string, country: string, targetCount: 
     }
   }
   
+  console.log(`✅ ${country.toUpperCase()} 地区最终收集到 ${reviews.length} 条评论`);
   return reviews;
 }
 
@@ -213,7 +246,7 @@ export async function POST(request: NextRequest) {
     const { appId, country } = urlInfo;
     
     // 并行获取应用信息和评论数据
-    const [appInfo, reviews] = await Promise.all([
+    const [appInfo, allCollectedReviews] = await Promise.all([
       fetchAppInfo(appId, country),
       fetchAppReviewsEnhanced(appId, country, 500) // 使用增强版收集方法
     ]);
@@ -224,42 +257,50 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
-    
-    if (reviews.length === 0) {
+
+    if (allCollectedReviews.length === 0) {
       return NextResponse.json(
         { success: false, error: 'No reviews found for this app' },
         { status: 404 }
       );
     }
+
+    // 记录实际收集到的总数
+    const totalCollectedCount = allCollectedReviews.length;
+    
+    // 如果收集到超过500条，取最新的500条进行分析
+    const reviewsForAnalysis = allCollectedReviews;
+    
+    console.log(`实际收集评论: ${totalCollectedCount} 条`);
     
     // 文本分析
-    const wordFrequency = processTextAnalysis(reviews);
+    const wordFrequency = processTextAnalysis(reviewsForAnalysis);
     
     // 简单情感分析（基于评分）
     const sentiment = {
-      positive: reviews.filter(r => r.rating >= 4).length,
-      neutral: reviews.filter(r => r.rating === 3).length,
-      negative: reviews.filter(r => r.rating <= 2).length
+      positive: reviewsForAnalysis.filter(r => r.rating >= 4).length,
+      neutral: reviewsForAnalysis.filter(r => r.rating === 3).length,
+      negative: reviewsForAnalysis.filter(r => r.rating <= 2).length
     };
     
-    // 统计收集的地区信息
-    const countriesSet = new Set(reviews.map(r => r.country));
+    // 统计收集的地区信息（基于所有收集的评论）
+    const countriesSet = new Set(allCollectedReviews.map(r => r.country));
     const countriesCollected = Array.from(countriesSet).filter(Boolean);
     
     const result = {
       appInfo,
-      totalReviews: reviews.length,
-      analyzedReviews: reviews.length,
+      totalReviews: reviewsForAnalysis.length, // 用于分析的评论数
+      analyzedReviews: reviewsForAnalysis.length, // 实际分析的评论数
       wordFrequency,
       sentiment,
-      reviews: reviews,
+      reviews: reviewsForAnalysis, // 返回用于分析的评论
       dataSourceInfo: {
         source: 'iTunes RSS Feed (Enhanced Multi-Region)',
         limitation: 'Recent reviews only, collected from multiple regions',
         totalAppReviews: appInfo.ratingCount,
-        collectedReviews: reviews.length,
+        collectedReviews: totalCollectedCount, // 实际收集的总数
         countriesCollected,
-        explanation: `通过多地区策略收集，从 ${countriesCollected.length} 个地区获取了 ${reviews.length} 条最新评论，相比单地区收集获得了更全面的用户反馈。`,
+        explanation: `通过多地区策略收集，实际从 ${countriesCollected.length} 个地区获取了 ${totalCollectedCount} 条评论，相比单地区收集获得了更全面的用户反馈。`,
         enhancedFeatures: [
           '多地区评论收集',
           '重复评论去除',

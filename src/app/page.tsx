@@ -243,6 +243,12 @@ export default function Home() {
                     <p className="text-gray-600 dark:text-gray-300">
                       已获取 {analysisResult.analyzedReviews} 条
                     </p>
+                    {analysisResult.dataSourceInfo?.collectedReviews && 
+                     analysisResult.dataSourceInfo.collectedReviews !== analysisResult.analyzedReviews && (
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                        * 实际收集 {analysisResult.dataSourceInfo.collectedReviews} 条，分析使用 {analysisResult.analyzedReviews} 条最新评论
+                      </p>
+                    )}
                     {analysisResult.analyzedReviews < 500 && (
                       <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                         * 该应用可用评论少于500条
@@ -260,7 +266,12 @@ export default function Home() {
                         <p className="font-medium text-blue-800 dark:text-blue-300 mb-2">数据来源说明</p>
                         <div className="text-blue-700 dark:text-blue-300 space-y-1">
                           <p>📊 <strong>总评论数：</strong>{analysisResult.dataSourceInfo.totalAppReviews.toLocaleString()} 条（应用发布以来的全部评论）</p>
-                          <p>🎯 <strong>本次分析：</strong>{analysisResult.dataSourceInfo.collectedReviews} 条（来自 iTunes RSS Feed 的最新评论）</p>
+                          <p>🔍 <strong>实际收集：</strong>{analysisResult.dataSourceInfo.collectedReviews} 条（从多地区收集的评论总数）</p>
+                          <p>🎯 <strong>本次分析：</strong>{analysisResult.analyzedReviews} 条（{
+                            analysisResult.dataSourceInfo.collectedReviews > analysisResult.analyzedReviews 
+                              ? `从 ${analysisResult.dataSourceInfo.collectedReviews} 条中选取的最新评论`
+                              : '全部收集的评论'
+                          }）</p>
                           
                           {analysisResult.dataSourceInfo.countriesCollected && analysisResult.dataSourceInfo.countriesCollected.length > 1 && (() => {
                             // 统计各国评论数量
