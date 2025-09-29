@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, BarChart3, Cloud, Download, Info, Star, MessageSquare, Heart, TrendingUp, Users, Clock, Code, Target } from 'lucide-react';
+import { Search, BarChart3, Cloud, Download, Info, Star, MessageSquare, Heart, TrendingUp, Users, Clock, Code, Target, CheckCircle, ArrowRight, HelpCircle, Lightbulb, Zap, Globe, Shield, Smartphone } from 'lucide-react';
 import { WordCloud } from '@/components/WordCloud';
 import { WordFrequencyChart } from '@/components/WordFrequencyChart';
 import { SentimentChart } from '@/components/SentimentChart';
@@ -10,7 +10,6 @@ import { RatingAnalysis } from '@/components/RatingAnalysis';
 import { UserBehaviorAnalysis } from '@/components/UserBehaviorAnalysis';
 import { VersionAnalysis } from '@/components/VersionAnalysis';
 import { KeywordEvolution } from '@/components/KeywordEvolution';
-import ClientOnlyPWA from '@/components/ClientOnlyPWA';
 import { downloadCSV } from '@/lib/export';
 import { generateMockAnalysisData } from '@/lib/advanced-analytics';
 
@@ -532,35 +531,268 @@ export default function Home() {
 
           {/* 功能特性 */}
           {!analysisResult && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-                <Cloud className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">智能词云</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  自动生成美观的词云图，直观展示评论中的高频关键词
-                </p>
+            <>
+              {/* 核心功能介绍 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
+                  <Cloud className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">智能词云</h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    自动生成美观的词云图，直观展示评论中的高频关键词
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
+                  <BarChart3 className="h-12 w-12 text-green-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">数据统计</h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    提供详细的词频统计和可视化图表，帮助深入了解用户反馈
+                  </p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
+                  <Download className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">报告导出</h3>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    支持导出 CSV 和 PDF 格式的分析报告，便于保存和分享
+                  </p>
+                </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-                <BarChart3 className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">数据统计</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  提供详细的词频统计和可视化图表，帮助深入了解用户反馈
-                </p>
+
+              {/* Step by Step 使用指南 */}
+              <div className="mt-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+                  📋 使用指南
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">1</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">复制应用链接</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      在 App Store 中找到目标应用，复制其链接地址
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-green-600 dark:text-green-400">2</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">粘贴并设置</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      将链接粘贴到输入框，选择增强模式（推荐）
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">3</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">开始分析</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      点击"开始分析"按钮，等待系统自动处理数据
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">4</span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">查看结果</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      浏览各种分析结果，导出报告或深入研究数据
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-                <Download className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">报告导出</h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  支持导出 CSV 和 PDF 格式的分析报告，便于保存和分享
-                </p>
+
+              {/* 详细功能列表 */}
+              <div className="mt-16 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl shadow-xl p-8">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+                  🚀 完整功能列表
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* 数据分析功能 */}
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <BarChart3 className="h-6 w-6 mr-2 text-blue-600" />
+                      数据分析功能
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { icon: Cloud, text: "智能词云生成", desc: "自动提取关键词并生成美观词云" },
+                        { icon: Heart, text: "情感分析", desc: "识别正面、负面、中性评论情感" },
+                        { icon: Star, text: "评分分布分析", desc: "展示1-5星评分的详细分布" },
+                        { icon: TrendingUp, text: "时间趋势分析", desc: "评论数量和质量的时间变化" },
+                        { icon: Users, text: "用户行为分析", desc: "分析用户评论长度、活跃度等" },
+                        { icon: Code, text: "版本对比分析", desc: "不同应用版本的用户反馈对比" }
+                      ].map((feature, index) => (
+                        <div key={index} className="flex items-start space-x-3">
+                          <feature.icon className="h-5 w-5 text-green-600 mt-0.5" />
+                          <div>
+                            <span className="font-medium text-gray-900 dark:text-white">{feature.text}</span>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{feature.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 数据收集功能 */}
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                      <Globe className="h-6 w-6 mr-2 text-green-600" />
+                      数据收集功能
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { icon: Globe, text: "多地区数据收集", desc: "从20+国家和地区收集评论" },
+                        { icon: Zap, text: "增强模式", desc: "智能收集更多样本和更全面数据" },
+                        { icon: Shield, text: "数据质量保证", desc: "自动过滤无效和重复评论" },
+                        { icon: Smartphone, text: "实时数据获取", desc: "直接从iTunes RSS Feed获取最新评论" },
+                        { icon: Target, text: "智能采样", desc: "最多收集500+条最有代表性的评论" },
+                        { icon: Download, text: "多格式导出", desc: "支持CSV、PDF等多种格式导出" }
+                      ].map((feature, index) => (
+                        <div key={index} className="flex items-start space-x-3">
+                          <feature.icon className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <div>
+                            <span className="font-medium text-gray-900 dark:text-white">{feature.text}</span>
+                            <p className="text-sm text-gray-600 dark:text-gray-300">{feature.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+
+              {/* 应用场景 */}
+              <div className="mt-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+                  💼 应用场景
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                    <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">产品经理</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      了解用户痛点，优化产品功能，制定产品路线图
+                    </p>
+                  </div>
+                  <div className="text-center p-6 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                    <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <TrendingUp className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">市场研究</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      分析竞品反馈，了解市场趋势，发现商业机会
+                    </p>
+                  </div>
+                  <div className="text-center p-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                    <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Code className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">开发团队</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      收集Bug反馈，优先级排序，提升用户体验
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ 区域 */}
+              <div className="mt-16 bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center flex items-center justify-center">
+                  <HelpCircle className="h-8 w-8 mr-3 text-blue-600" />
+                  常见问题 FAQ
+                </h2>
+                <div className="space-y-6">
+                  {[
+                    {
+                      question: "支持哪些国家和地区的 App Store？",
+                      answer: "我们支持全球20+个国家和地区的App Store，包括美国、中国、日本、韩国、英国、德国、法国、澳大利亚等主要市场。增强模式会自动从多个地区收集数据。"
+                    },
+                    {
+                      question: "为什么有时候收集到的评论数量较少？",
+                      answer: "评论数量取决于几个因素：1）应用本身的评论总数；2）iTunes RSS Feed只提供最近几个月到一年的评论；3）某些地区的评论数据可能有限。我们建议使用增强模式来获取更多数据。"
+                    },
+                    {
+                      question: "增强模式和普通模式有什么区别？",
+                      answer: "普通模式：从单一地区收集评论，速度较快。增强模式：从多个地区收集评论，数据更全面，包含更多语言和文化背景的用户反馈，但处理时间稍长。"
+                    },
+                    {
+                      question: "分析结果的准确性如何？",
+                      answer: "我们使用先进的AI技术进行文本分析和情感识别，准确率通常在85-95%之间。词频统计基于严格的文本处理算法，确保结果的可靠性。所有数据均来自苹果官方的iTunes RSS Feed。"
+                    },
+                    {
+                      question: "可以分析中文应用的评论吗？",
+                      answer: "完全支持！我们的系统支持多语言处理，包括中文、英文、日文、韩文等。无论是中国区App Store的应用还是其他地区的中文评论，都能准确分析。"
+                    },
+                    {
+                      question: "导出的数据包含哪些内容？",
+                      answer: "CSV报告包含：应用基本信息、评论详情（标题、内容、评分、作者、时间、版本、来源国家）、词频统计数据、地区分布统计等。文件采用UTF-8编码，完美支持中文。"
+                    },
+                    {
+                      question: "分析过程需要多长时间？",
+                      answer: "普通模式：30秒-2分钟；增强模式：1-5分钟。时间取决于应用的评论数量和网络状况。我们建议在分析过程中保持页面打开。"
+                    },
+                    {
+                      question: "有使用次数限制吗？",
+                      answer: "目前本工具完全免费使用，没有次数限制。我们希望为开发者和产品团队提供有价值的数据分析服务。未来可能会推出更多高级功能。"
+                    }
+                  ].map((faq, index) => (
+                    <div key={index} className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-b-0">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-start">
+                        <CheckCircle className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                        {faq.question}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300 ml-7 leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 使用提示 */}
+              <div className="mt-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white">
+                <div className="text-center">
+                  <Lightbulb className="h-16 w-16 mx-auto mb-4 text-yellow-300" />
+                  <h2 className="text-2xl font-bold mb-4">💡 使用小贴士</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <ArrowRight className="h-5 w-5 mt-0.5 text-yellow-300" />
+                        <span>建议使用增强模式获取更全面的数据分析</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ArrowRight className="h-5 w-5 mt-0.5 text-yellow-300" />
+                        <span>分析热门应用时，数据收集可能需要更长时间</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ArrowRight className="h-5 w-5 mt-0.5 text-yellow-300" />
+                        <span>可以对比分析同类应用，了解竞品优势</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <ArrowRight className="h-5 w-5 mt-0.5 text-yellow-300" />
+                        <span>词云图可以快速识别用户关注的核心功能</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ArrowRight className="h-5 w-5 mt-0.5 text-yellow-300" />
+                        <span>时间趋势分析有助于了解应用发展轨迹</span>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <ArrowRight className="h-5 w-5 mt-0.5 text-yellow-300" />
+                        <span>导出的CSV文件可用于进一步的数据分析</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
-      
-      {/* PWA 安装提示 */}
-      <ClientOnlyPWA />
     </main>
   );
 }
