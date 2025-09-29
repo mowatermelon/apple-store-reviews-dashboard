@@ -98,6 +98,12 @@ async function fetchAppReviewsEnhanced(appId: string, primaryCountry: string, ta
   
   console.log(`总共收集到 ${allReviews.length} 条评论，来自 ${new Set(allReviews.map(r => r.country)).size} 个地区`);
   
+  // 如果收集到的评论超过目标数量，取最新的targetCount条
+  if (allReviews.length > targetCount) {
+    console.log(`评论数量 ${allReviews.length} 超过目标 ${targetCount}，取最新的 ${targetCount} 条`);
+    return allReviews.slice(0, targetCount);
+  }
+  
   return allReviews;
 }
 
@@ -105,7 +111,7 @@ async function fetchAppReviewsEnhanced(appId: string, primaryCountry: string, ta
 async function fetchCountryReviews(appId: string, country: string, maxCount: number): Promise<ReviewData[]> {
   const reviews: ReviewData[] = [];
   let page = 1;
-  const maxPages = Math.min(10, Math.ceil(maxCount / 25)); // 每页大约 50 条评论，最多查询 10 页
+  const maxPages = Math.min(20, Math.ceil(maxCount / 25)); // 每页大约25条评论，最多查询20页
 
   console.log(`开始收集 ${country.toUpperCase()} 地区评论，目标获取该地区所有可用评论（最多 ${maxCount} 条）`);
 
@@ -136,9 +142,20 @@ async function fetchCountryReviews(appId: string, country: string, maxCount: num
       const entries = data.feed?.entry || [];
       
       // 第一页的第一个条目通常是应用信息，需要跳过
-      const reviewEntries = page === 1 ? entries.slice(1) : entries;
+      // 但有些情况下可能不包含应用信息，需要检查条目类型
+      let reviewEntries = entries;
+      if (page === 1 && entries.length > 0) {
+        // 检查第一个条目是否是应用信息（通常没有 rating 字段）
+        const firstEntry = entries[0];
+        if (!firstEntry['im:rating']) {
+          reviewEntries = entries.slice(1);
+          console.log(`${country.toUpperCase()} 第 ${page} 页跳过应用信息条目，剩余 ${reviewEntries.length} 条评论数据`);
+        } else {
+          console.log(`${country.toUpperCase()} 第 ${page} 页未发现应用信息条目，使用全部 ${reviewEntries.length} 条数据`);
+        }
+      }
       
-      console.log(`${country.toUpperCase()} 第 ${page} 页获取到 ${reviewEntries.length} 条原始数据`);
+      console.log(`${country.toUpperCase()} 第 ${page} 页获取到 ${reviewEntries.length} 条评论数据`);
       
       if (reviewEntries.length === 0) {
         console.log(`${country.toUpperCase()} 第 ${page} 页无数据，该地区评论收集完毕`);
@@ -269,9 +286,9 @@ export async function POST(request: NextRequest) {
     const totalCollectedCount = allCollectedReviews.length;
     
     // 如果收集到超过500条，取最新的500条进行分析
-    const reviewsForAnalysis = allCollectedReviews;
+    const reviewsForAnalysis = allCollectedReviews.slice(0, 500);
     
-    console.log(`实际收集评论: ${totalCollectedCount} 条`);
+    console.log(`实际收集评论: ${totalCollectedCount} 条，用于分析: ${reviewsForAnalysis.length} 条`);
     
     // 文本分析
     const wordFrequency = processTextAnalysis(reviewsForAnalysis);
@@ -300,7 +317,7 @@ export async function POST(request: NextRequest) {
         totalAppReviews: appInfo.ratingCount,
         collectedReviews: totalCollectedCount, // 实际收集的总数
         countriesCollected,
-        explanation: `通过多地区策略收集，实际从 ${countriesCollected.length} 个地区获取了 ${totalCollectedCount} 条评论，相比单地区收集获得了更全面的用户反馈。`,
+        explanation: `通过多地区策略收集，实际从 ${countriesCollected.length} 个地区获取了 ${totalCollectedCount} 条评论${totalCollectedCount > 500 ? `，分析使用其中最新的 ${reviewsForAnalysis.length} 条` : ''}，相比单地区收集获得了更全面的用户反馈。`,
         enhancedFeatures: [
           '多地区评论收集',
           '重复评论去除',

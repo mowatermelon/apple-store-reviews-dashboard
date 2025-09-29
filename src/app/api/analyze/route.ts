@@ -8,6 +8,7 @@ interface ReviewData {
   author: string;
   date: string;
   version?: string;
+  country?: string; // 添加国家字段
 }
 
 interface AppInfo {
@@ -34,27 +35,46 @@ function parseAppStoreUrl(url: string): { appId: string; country: string } | nul
 async function fetchAppReviews(appId: string, country: string, targetCount: number = 500): Promise<ReviewData[]> {
   const reviews: ReviewData[] = [];
   let page = 1;
-  const maxPages = 25; // 增加最大页数限制，尝试获取更多评论
+  const maxPages = 10; // 增加最大页数限制，尝试获取更多评论
+  
+  console.log(`开始从 ${country.toUpperCase()} 地区收集评论，目标: ${targetCount} 条`);
   
   while (reviews.length < targetCount && page <= maxPages) {
     try {
       const url = `https://itunes.apple.com/${country}/rss/customerreviews/page=${page}/id=${appId}/sortby=mostrecent/json`;
+      console.log(`请求 ${country.toUpperCase()} 第 ${page} 页: ${url}`);
+      
       const response = await fetch(url);
       
       if (!response.ok) {
-        console.warn(`Failed to fetch page ${page}: ${response.status}`);
+        console.warn(`Failed to fetch page ${page}: ${response.status} - ${url}`);
         page++;
         continue;
       }
+      
+      console.log(`${country.toUpperCase()} 第 ${page} 页请求成功 (${response.status})`);
       
       const data = await response.json();
       const entries = data.feed?.entry || [];
       
       // 第一页的第一个条目通常是应用信息，需要跳过
-      const reviewEntries = page === 1 ? entries.slice(1) : entries;
+      // 但有些情况下可能不包含应用信息，需要检查条目类型
+      let reviewEntries = entries;
+      if (page === 1 && entries.length > 0) {
+        // 检查第一个条目是否是应用信息（通常没有 rating 字段）
+        const firstEntry = entries[0];
+        if (!firstEntry['im:rating']) {
+          reviewEntries = entries.slice(1);
+          console.log(`${country.toUpperCase()} 第 ${page} 页跳过应用信息条目，剩余 ${reviewEntries.length} 条评论数据`);
+        } else {
+          console.log(`${country.toUpperCase()} 第 ${page} 页未发现应用信息条目，使用全部 ${reviewEntries.length} 条数据`);
+        }
+      }
+      
+      console.log(`${country.toUpperCase()} 第 ${page} 页获取到 ${reviewEntries.length} 条评论数据`);
       
       if (reviewEntries.length === 0) {
-        console.log(`No more reviews found at page ${page}`);
+        console.log(`${country.toUpperCase()} 第 ${page} 页无评论数据，停止收集`);
         break;
       }
       
@@ -63,13 +83,14 @@ async function fetchAppReviews(appId: string, country: string, targetCount: numb
         if (reviews.length >= targetCount) break;
         
         reviews.push({
-          id: entry.id?.label || `${appId}-${page}-${reviews.length}`,
+          id: entry.id?.label || `${appId}-${country}-${page}-${reviews.length}`,
           title: entry.title?.label || '',
           content: entry.content?.label || '',
           rating: parseInt(entry['im:rating']?.label || '0'),
           author: entry.author?.name?.label || 'Anonymous',
           date: entry.updated?.label || new Date().toISOString(),
-          version: entry['im:version']?.label
+          version: entry['im:version']?.label,
+          country: country.toUpperCase() // 添加国家信息
         });
       }
       
@@ -87,7 +108,7 @@ async function fetchAppReviews(appId: string, country: string, targetCount: numb
     }
   }
   
-  console.log(`Total reviews collected: ${reviews.length} (from iTunes RSS Feed - most recent reviews only)`);
+  console.log(`✅ ${country.toUpperCase()} 地区最终收集到 ${reviews.length} 条评论`);
   return reviews.slice(0, targetCount); // 确保不超过目标数量
 }
 
@@ -209,6 +230,10 @@ export async function POST(request: NextRequest) {
       negative: reviews.filter(r => r.rating <= 2).length
     };
     
+    // 统计收集的地区信息
+    const countriesSet = new Set(reviews.map(r => r.country));
+    const countriesCollected = Array.from(countriesSet).filter(Boolean);
+    
     const result = {
       appInfo,
       totalReviews: reviews.length,
@@ -221,7 +246,8 @@ export async function POST(request: NextRequest) {
         limitation: 'Only recent reviews available',
         totalAppReviews: appInfo.ratingCount,
         collectedReviews: reviews.length,
-        explanation: `iTunes RSS Feed只能获取最新的评论数据，无法访问全部${appInfo.ratingCount.toLocaleString()}条历史评论。`
+        countriesCollected, // 添加收集的国家信息
+        explanation: `iTunes RSS Feed只能获取最新的评论数据，无法访问全部${appInfo.ratingCount.toLocaleString()}条历史评论。本次从 ${country.toUpperCase()} 地区收集了 ${reviews.length} 条评论。`
       }
     };
     
