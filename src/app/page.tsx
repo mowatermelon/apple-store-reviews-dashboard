@@ -10,6 +10,7 @@ import { RatingAnalysis } from '@/components/RatingAnalysis';
 import { UserBehaviorAnalysis } from '@/components/UserBehaviorAnalysis';
 import { VersionAnalysis } from '@/components/VersionAnalysis';
 import { KeywordEvolution } from '@/components/KeywordEvolution';
+import ClientOnlyPWA from '@/components/ClientOnlyPWA';
 import { downloadCSV } from '@/lib/export';
 import { generateMockAnalysisData } from '@/lib/advanced-analytics';
 
@@ -557,6 +558,9 @@ export default function Home() {
           )}
         </div>
       </div>
+      
+      {/* PWA 安装提示 */}
+      <ClientOnlyPWA />
     </main>
   );
 }
