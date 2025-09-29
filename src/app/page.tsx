@@ -18,6 +18,15 @@ interface AppInfo {
   developer: string;
   rating: number;
   ratingCount: number;
+  logoUrl?: string;
+  fileSizeBytes?: number;
+  fileSizeMB?: number;
+  releaseDate?: string;
+  currentVersionReleaseDate?: string;
+  formattedReleaseDate?: string;
+  formattedUpdateDate?: string;
+  daysOnStore?: number;
+  yearsOnStore?: string;
 }
 
 interface ReviewData {
@@ -217,44 +226,91 @@ export default function Home() {
                   <Info className="h-6 w-6 mr-2" />
                   应用信息
                 </h2>
+                
+                {/* 应用logo和基本信息 */}
+                <div className="flex flex-col md:flex-row gap-6 mb-8">
+                  {/* 应用Logo */}
+                  {analysisResult.appInfo.logoUrl && (
+                    <div className="flex-shrink-0">
+                      <img 
+                        src={analysisResult.appInfo.logoUrl} 
+                        alt={`${analysisResult.appInfo.name} Logo`}
+                        className="w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-600"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* 基本信息 */}
+                  <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">应用名称</h3>
+                      <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.name}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">开发者</h3>
+                      <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.developer}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                        <Star className="h-5 w-5 mr-1 text-yellow-500" />
+                        平均评分
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        {analysisResult.appInfo.rating}/5.0 ({analysisResult.appInfo.ratingCount.toLocaleString()} 评价)
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                        <MessageSquare className="h-5 w-5 mr-1" />
+                        分析评论
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        已获取 {analysisResult.analyzedReviews} 条
+                      </p>
+                      {analysisResult.dataSourceInfo?.collectedReviews && 
+                       analysisResult.dataSourceInfo.collectedReviews !== analysisResult.analyzedReviews && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                          * 实际收集 {analysisResult.dataSourceInfo.collectedReviews} 条，分析使用 {analysisResult.analyzedReviews} 条最新评论
+                        </p>
+                      )}
+                      {analysisResult.analyzedReviews < 500 && (
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                          * 该应用可用评论少于500条
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* 详细信息网格 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">应用名称</h3>
-                    <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.name}</p>
-                  </div>
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">开发者</h3>
-                    <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.developer}</p>
-                  </div>
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center justify-center">
-                      <Star className="h-5 w-5 mr-1 text-yellow-500" />
-                      平均评分
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {analysisResult.appInfo.rating}/5.0 ({analysisResult.appInfo.ratingCount.toLocaleString()} 评价)
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center justify-center">
-                      <MessageSquare className="h-5 w-5 mr-1" />
-                      分析评论
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300">
-                      已获取 {analysisResult.analyzedReviews} 条
-                    </p>
-                    {analysisResult.dataSourceInfo?.collectedReviews && 
-                     analysisResult.dataSourceInfo.collectedReviews !== analysisResult.analyzedReviews && (
-                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                        * 实际收集 {analysisResult.dataSourceInfo.collectedReviews} 条，分析使用 {analysisResult.analyzedReviews} 条最新评论
-                      </p>
-                    )}
-                    {analysisResult.analyzedReviews < 500 && (
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                        * 该应用可用评论少于500条
-                      </p>
-                    )}
-                  </div>
+                  {analysisResult.appInfo.fileSizeMB && (
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">应用大小</h3>
+                      <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.fileSizeMB} MB</p>
+                    </div>
+                  )}
+                  {analysisResult.appInfo.formattedReleaseDate && (
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">上架时间</h3>
+                      <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.formattedReleaseDate}</p>
+                    </div>
+                  )}
+                  {analysisResult.appInfo.formattedUpdateDate && (
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">更新时间</h3>
+                      <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.formattedUpdateDate}</p>
+                    </div>
+                  )}
+                  {analysisResult.appInfo.yearsOnStore && (
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center justify-center">
+                        <Clock className="h-5 w-5 mr-1" />
+                        在架时长
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300">{analysisResult.appInfo.yearsOnStore}</p>
+                    </div>
+                  )}
                 </div>
                 
                 {/* 数据来源说明 */}

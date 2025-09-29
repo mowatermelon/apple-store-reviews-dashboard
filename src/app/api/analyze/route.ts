@@ -16,6 +16,99 @@ interface AppInfo {
   developer: string;
   rating: number;
   ratingCount: number;
+  logoUrl?: string;
+  fileSizeBytes?: number;
+  fileSizeMB?: number;
+  releaseDate?: string;
+  currentVersionReleaseDate?: string;
+  formattedReleaseDate?: string;
+  formattedUpdateDate?: string;
+  daysOnStore?: number;
+  yearsOnStore?: string;
+}
+
+// 格式化日期为 2021/3/31 15:00 格式
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${year}/${month}/${day} ${hours}:${minutes}`;
+}
+
+// 计算应用在架时长 - 使用更精确的算法
+function calculateTimeOnStore(releaseDate: string): { days: number; formatted: string } {
+  if (!releaseDate) return { days: 0, formatted: '未知' };
+  
+  // 将 ISO 格式转换为 YYYY/MM/DD HH:mm:ss 格式
+  const date = new Date(releaseDate);
+  const formattedDateString = formatDate(releaseDate) + ':00'; // 添加秒数
+  
+  return calculateDuration(formattedDateString);
+}
+
+// 精确的时长计算函数（基于外部提供的算法）
+function calculateDuration(releasedDateString: string): { days: number; formatted: string } {
+  if (!releasedDateString) return { days: 0, formatted: '' };
+  
+  // 解析发布时间 (格式: 2021/03/31 15:00:00)
+  const dateStr = releasedDateString.split(' ')[0]; // 取日期部分
+  const dateParts = dateStr.split('/'); // 分割 2021/03/31
+  
+  if (dateParts.length !== 3) return { days: 0, formatted: '' };
+  
+  const year = parseInt(dateParts[0]);
+  const month = parseInt(dateParts[1]);
+  const day = parseInt(dateParts[2]);
+  
+  // 验证解析结果
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return { days: 0, formatted: '' };
+  
+  const releaseDate = new Date(year, month - 1, day); // month是0-11
+  const currentDate = new Date();
+  
+  // 计算时间差
+  const diffTime = currentDate.getTime() - releaseDate.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // 防止负数情况
+  if (diffDays < 0) return { days: 0, formatted: '0 天' };
+  
+  // 计算年、月、日
+  let years = 0;
+  let months = 0;
+  let days = diffDays;
+  
+  // 粗略计算年份（365天一年）
+  if (days >= 365) {
+    years = Math.floor(days / 365);
+    days = days % 365;
+  }
+  
+  // 粗略计算月份（30天一月）
+  if (days >= 30) {
+    months = Math.floor(days / 30);
+    days = days % 30;
+  }
+  
+  // 格式化输出
+  let formatted = '';
+  if (years > 0) {
+    formatted = `${years} 年 ${months} 月 ${days} 天`;
+  } else if (months > 0) {
+    formatted = `${months} 月 ${days} 天`;
+  } else {
+    formatted = `${days} 天`;
+  }
+  
+  return { days: diffDays, formatted };
+}
+
+// 字节转换为MB
+function bytesToMB(bytes: number): number {
+  return Math.round((bytes / (1024 * 1024)) * 100) / 100;
 }
 
 // 提取 App ID 和国家代码
@@ -125,11 +218,25 @@ async function fetchAppInfo(appId: string, country: string): Promise<AppInfo | n
     
     if (!app) return null;
     
+    const fileSizeBytes = app.fileSizeBytes ? parseInt(app.fileSizeBytes) : 0;
+    const releaseDate = app.releaseDate;
+    const currentVersionReleaseDate = app.currentVersionReleaseDate;
+    const timeOnStore = releaseDate ? calculateTimeOnStore(releaseDate) : { days: 0, formatted: '未知' };
+    
     return {
       name: app.trackName || 'Unknown App',
       developer: app.artistName || 'Unknown Developer',
       rating: app.averageUserRating || 0,
-      ratingCount: app.userRatingCount || 0
+      ratingCount: app.userRatingCount || 0,
+      logoUrl: app.artworkUrl512 || app.artworkUrl100 || app.artworkUrl60,
+      fileSizeBytes,
+      fileSizeMB: fileSizeBytes ? bytesToMB(fileSizeBytes) : 0,
+      releaseDate,
+      currentVersionReleaseDate,
+      formattedReleaseDate: releaseDate ? formatDate(releaseDate) : '未知',
+      formattedUpdateDate: currentVersionReleaseDate ? formatDate(currentVersionReleaseDate) : '未知',
+      daysOnStore: timeOnStore.days,
+      yearsOnStore: timeOnStore.formatted
     };
   } catch (error) {
     console.error('Error fetching app info:', error);
